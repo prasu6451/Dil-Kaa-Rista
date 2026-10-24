@@ -64,9 +64,9 @@ class MatchesFeedView(APIView):
         user_profile = getattr(current_user, 'profile', None) if current_user else None
         user_pref = getattr(user_profile, 'partner_preference', None) if user_profile else None
 
-        # Base queryset: only approved and public profiles
+        # Base queryset: public profiles that are approved or undergoing review
         queryset = Profile.objects.select_related('user').filter(
-            verification_status='approved',
+            verification_status__in=['approved', 'under_review'],
             is_hidden=False
         )
 
@@ -113,7 +113,11 @@ class MatchesFeedView(APIView):
                 pref_q &= Q(city__icontains=user_pref.city)
             if user_pref.marital_status:
                 pref_q &= Q(marital_status__in=user_pref.marital_status)
-            queryset = queryset.filter(pref_q)
+
+            preferred_q = queryset.filter(pref_q)
+            # If strict preference has matches, use them; otherwise show broader opposite gender matches
+            if preferred_q.exists():
+                queryset = preferred_q
 
         # Refine Search Filters (Page 4)
         has_photo = request.query_params.get('has_photo')
@@ -185,7 +189,7 @@ class SearchView(APIView):
     def _execute_search(self, request, params):
         current_user = request.user if request.user.is_authenticated else None
         queryset = Profile.objects.select_related('user').filter(
-            verification_status='approved',
+            verification_status__in=['approved', 'under_review'],
             is_hidden=False
         )
 

@@ -8,10 +8,10 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:
         profile = Profile.objects.create(
             user=instance,
-            full_name=instance.full_name,
-            gender=instance.gender,
-            verification_status='under_review',
-            is_verified=False,
+            full_name=instance.full_name or 'Member',
+            gender=instance.gender or 'male',
+            verification_status='approved',
+            is_verified=True,
         )
         PartnerPreference.objects.get_or_create(profile=profile)
     else:
