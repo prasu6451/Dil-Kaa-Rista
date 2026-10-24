@@ -107,13 +107,23 @@ class _ProfileWizardScreenState extends State<ProfileWizardScreen> {
         }
       }
 
-      // 2. Construct profile object
+      // 2. Construct profile object with robust fallbacks
+      final initialName = widget.initialProfile?.fullName.trim() ?? '';
+      final userName = user.fullName.trim();
+      final effectiveName = initialName.isNotEmpty
+          ? initialName
+          : (userName.isNotEmpty ? userName : 'Member');
+
+      final initialGender = widget.initialProfile?.gender?.trim() ?? '';
+      final userGender = user.gender.trim();
+      final effectiveGender = initialGender.isNotEmpty
+          ? initialGender
+          : (userGender.isNotEmpty ? userGender : 'male');
+
       final updatedProfile = ProfileModel(
         id: user.id,
-        fullName: widget.initialProfile?.fullName ??
-            (user.fullName.isNotEmpty ? user.fullName : 'Member'),
-        gender: widget.initialProfile?.gender ??
-            (user.gender.isNotEmpty ? user.gender : 'Female'),
+        fullName: effectiveName,
+        gender: effectiveGender,
         dateOfBirth: _dateOfBirth,
         maritalStatus: _maritalStatus,
         heightCm: _heightCm,
@@ -128,17 +138,21 @@ class _ProfileWizardScreenState extends State<ProfileWizardScreen> {
         annualIncome: _annualIncome,
         aboutMe: _aboutMeController.text.trim(),
         avatarUrl: finalAvatarUrl,
+        photos: finalAvatarUrl != null ? [finalAvatarUrl] : (widget.initialProfile?.photos ?? const []),
         isPhotoLocked: _isPhotoLocked,
       );
 
       // 3. Save to Django / PostgreSQL
-      await _authController.saveProfile(updatedProfile);
+      final saved = await _authController.saveProfile(updatedProfile);
+      if (saved == null) {
+        throw Exception('Server did not return a valid profile.');
+      }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Profile created successfully!'),
+          content: Text('Profile saved successfully!'),
           backgroundColor: AppColors.success,
         ),
       );

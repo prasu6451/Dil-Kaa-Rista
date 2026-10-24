@@ -168,21 +168,27 @@ class ApiService {
 
   /// Update Current User Profile
   Future<ProfileModel?> updateProfile(ProfileModel profile) async {
-    try {
-      final url = Uri.parse('$baseUrl/profiles/me/');
-      final response = await http.put(
-        url,
-        headers: _headers(),
-        body: jsonEncode(profile.toJson()),
-      );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        return ProfileModel.fromJson(data);
-      }
-      return null;
-    } catch (e) {
-      debugPrint('Error saving profile: $e');
-      return null;
+    final url = Uri.parse('$baseUrl/profiles/me/');
+    final response = await http.put(
+      url,
+      headers: _headers(),
+      body: jsonEncode(profile.toJson()),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return ProfileModel.fromJson(data);
+    } else {
+      String msg = 'Failed to update profile (${response.statusCode})';
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map) {
+          msg = decoded['error'] ??
+              decoded['detail'] ??
+              decoded.entries.map((e) => '${e.key}: ${e.value}').join(', ');
+        }
+      } catch (_) {}
+      debugPrint('Error saving profile: $msg');
+      throw Exception(msg);
     }
   }
 

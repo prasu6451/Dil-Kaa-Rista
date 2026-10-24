@@ -130,8 +130,8 @@ class AuthController {
 
 
   /// Update Profile Details
-  Future<void> saveProfile(ProfileModel profile) async {
-    await _api.updateProfile(profile);
+  Future<ProfileModel?> saveProfile(ProfileModel profile) async {
+    return await _api.updateProfile(profile);
   }
 
   /// Upload Profile Photo to Django Backend Media Storage

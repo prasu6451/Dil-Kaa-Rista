@@ -37,33 +37,36 @@ class MyProfileView(APIView):
         profile, _ = Profile.objects.get_or_create(
             user=request.user,
             defaults={
-                'full_name': request.user.full_name,
-                'gender': request.user.gender,
+                'full_name': request.user.full_name or 'Member',
+                'gender': request.user.gender or 'male',
             }
         )
-        mode = request.query_params.get('mode', '')
-        # During screening, profile owner sees a limited view unless in explicit edit mode
-        if profile.verification_status != 'approved' and mode != 'edit':
-            serializer = LimitedScreeningProfileSerializer(profile)
-            data = serializer.data
-            data['is_limited_screening_view'] = True
-            return Response(data)
-
         serializer = ProfileSerializer(profile)
         data = serializer.data
-        data['is_limited_screening_view'] = False
+        data['is_limited_screening_view'] = (profile.verification_status != 'approved')
         return Response(data)
 
     def put(self, request):
         profile, _ = Profile.objects.get_or_create(
             user=request.user,
             defaults={
-                'full_name': request.user.full_name,
-                'gender': request.user.gender,
+                'full_name': request.user.full_name or 'Member',
+                'gender': request.user.gender or 'male',
             }
         )
 
         data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+
+        # Fallback for empty core fields so validation never fails unexpectedly
+        if not data.get('full_name') or not str(data.get('full_name')).strip():
+            data['full_name'] = profile.full_name or request.user.full_name or 'Member'
+        if not data.get('gender') or not str(data.get('gender')).strip():
+            data['gender'] = profile.gender or request.user.gender or 'male'
+        if 'height_cm' in data and (data['height_cm'] == '' or data['height_cm'] is None):
+            data['height_cm'] = profile.height_cm or 165
+        if 'date_of_birth' in data and data['date_of_birth'] == '':
+            data['date_of_birth'] = None
+
         cr_changes_submitted = []
 
         # Page 2: Core fields requiring Customer Relations review:
