@@ -86,14 +86,14 @@ class Profile(models.Model):
     primary_photo_index = models.PositiveIntegerField(default=0)
     photo_privacy = models.CharField(max_length=30, choices=PHOTO_PRIVACY_CHOICES, default='all_members')
 
-    # Verification & Screening (Page 1)
+    # Verification & Screening (Auto-approved by default)
     verification_status = models.CharField(
         max_length=20,
         choices=VERIFICATION_CHOICES,
-        default='under_review',
+        default='approved',
         db_index=True
     )
-    is_verified = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=True)
     rejection_reason = models.TextField(null=True, blank=True)
     estimated_screening_hours = models.PositiveIntegerField(default=24)
 

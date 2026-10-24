@@ -14,11 +14,24 @@ class RegisterView(APIView):
             user = serializer.save()
             token, _ = Token.objects.get_or_create(user=user)
             
-            # Fetch profile
-            profile_data = None
+            # Ensure profile exists and is approved immediately
             if hasattr(user, 'profile'):
-                from profiles.serializers import ProfileSerializer
-                profile_data = ProfileSerializer(user.profile).data
+                user.profile.verification_status = 'approved'
+                user.profile.is_verified = True
+                user.profile.save()
+            else:
+                from profiles.models import Profile, PartnerPreference
+                profile = Profile.objects.create(
+                    user=user,
+                    full_name=user.full_name or 'Member',
+                    gender=user.gender or 'male',
+                    verification_status='approved',
+                    is_verified=True,
+                )
+                PartnerPreference.objects.get_or_create(profile=profile)
+
+            from profiles.serializers import ProfileSerializer
+            profile_data = ProfileSerializer(user.profile).data
 
             return Response({
                 'message': 'Account created successfully',

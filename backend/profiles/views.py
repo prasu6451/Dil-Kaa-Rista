@@ -39,6 +39,8 @@ class MyProfileView(APIView):
             defaults={
                 'full_name': request.user.full_name or 'Member',
                 'gender': request.user.gender or 'male',
+                'verification_status': 'approved',
+                'is_verified': True,
             }
         )
         serializer = ProfileSerializer(profile)
@@ -52,6 +54,8 @@ class MyProfileView(APIView):
             defaults={
                 'full_name': request.user.full_name or 'Member',
                 'gender': request.user.gender or 'male',
+                'verification_status': 'approved',
+                'is_verified': True,
             }
         )
 
@@ -205,7 +209,12 @@ class ProfilePhotoUploadView(APIView):
 
         profile, _ = Profile.objects.get_or_create(
             user=request.user,
-            defaults={'full_name': request.user.full_name, 'gender': request.user.gender}
+            defaults={
+                'full_name': request.user.full_name or 'Member',
+                'gender': request.user.gender or 'male',
+                'verification_status': 'approved',
+                'is_verified': True,
+            }
         )
 
         # Page 2 & 6: Free users up to 5 photos, Premium up to 20 photos
